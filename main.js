@@ -1,10 +1,17 @@
 const SHA256 = require('crypto-js/sha256');
 
+class Transaction {
+    constructor(from, to, amount){
+        this.from = from;
+        this.to = to;
+        this.amount = amount;
+    }
+}
+
 class Block {
-    constructor(index, timestamp, data, previousHash = '') {
-        this.index = index;
+    constructor(timestamp, transactions, previousHash = '') {
         this.timestamp = timestamp;
-        this.data = data;
+        this.transactions = transactions;
         this.previousHash = previousHash;
         this.hash = this.calculateHash();
         this.nonce = 0; // nonce is a random number used for generating a hash that satisfies the difficulty condition
@@ -23,6 +30,11 @@ class Block {
     mine(difficulty) {
         // proof-of-work implementation - basically, it's just a hash setter function with huge complexity
         // that stops people doing bad things with chain
+
+        // proof of work is safety tool to avoid people adjusting the chain and creating too many blocks in the chain
+        // difficulty in the example with bitcoin is the aim to create one block per minute,
+        // it requires a hash of a block to begin with certain number of zeros in the beginning
+        // for the case when compute is cheaper or better, difficulty will simply increase compensating for the fact
         while (this.hash.substring(0, difficulty) != Array(difficulty + 1).join("0")) {
             this.nonce += 1;
             this.hash = this.calculateHash();
@@ -34,10 +46,12 @@ class Blockchain {
     constructor() {
         this.difficulty = 5;
         this.chain = [this.createGenesisBlock()];
+        this.pendingTransactions = [];
+        this.miningReward = 100;
     }
 
     createGenesisBlock() {
-        let genesis = new Block(0, "01/01/2024", "Genesis block", "0");
+        let genesis = new Block("01/01/2024", "Genesis block", "0");
         genesis.mine(this.difficulty);
         return genesis
     }
@@ -46,11 +60,34 @@ class Blockchain {
         return this.chain[this.chain.length - 1];
     }
 
-    addBlock(newBlock) {
-        newBlock.previousHash = this.getLatestBlock().hash;
-        // after we have set previousHash for a new block we must recalculate hash, cause the data in it is changed
-        newBlock.mine(this.difficulty); // mine is used to set hash for a block
-        this.chain.push(newBlock);
+    minePendingTransactions(miningRewardAddress){
+        let block = new Block(Date.now(), this.pendingTransactions);
+        block.previousHash = this.getLatestBlock().hash;
+        block.mine(this.difficulty);
+
+        console.log('Block successfully mined!')
+        this.chain.push(block);
+
+        this.pendingTransactions = [
+            new Transaction(null, miningRewardAddress, this.miningReward)
+        ];
+    }
+
+    addTransaction(transaction){
+        this.pendingTransactions.push(transaction);
+    }
+
+    getBalanceOfAddress(address){
+        let balance = 0;
+
+        for(const block of this.chain){
+            for(const transaction of block.transactions){
+                if(transaction.from == address) balance -= transaction.amount;
+                if(transaction.to == address) balance += transaction.amount;
+            }
+        }
+
+        return balance;
     }
 
     isChainValid() {
@@ -69,20 +106,15 @@ class Blockchain {
     }
 }
 
-let bchain = new Blockchain();
-console.log('Mining block 1...')
-bchain.addBlock(new Block(1, "21/03/2024", { amount: 5 }));
-console.log('Mining block 2...')
-bchain.addBlock(new Block(2, "22/03/2024", { amount: 10 }));
+let chain = new Blockchain();
+chain.addTransaction(new Transaction('address1', 'address2', 100));
+chain.addTransaction(new Transaction('address2', 'address1', 50));
 
-console.log('Is blockchain valid?', bchain.isChainValid())
-console.log(JSON.stringify(bchain, null, 4));
+console.log('\nStarting the miner...');
+chain.minePendingTransactions('address3');
 
-bchain.chain[1].data = { amount: 300 };
-bchain.chain[1].hash = bchain.chain[2].calculateHash();
-console.log('Is blockchain valid?', bchain.isChainValid())
+// in order for reward to appear in miner's wallet someone has to mine the reward transaction which is in pendings
+chain.minePendingTransactions('address4');
 
-// proof of work is safety tool to avoid people adjusting the chain and creating too many blocks in the chain
-// difficulty in the example with bitcoin is the aim to create one block per minute,
-// it requires a hash of a block to begin with certain number of zeros in the beginning
-// for the case when compute is cheaper or better, difficulty will simply increase compensating for the fact
+console.log('\nBalance of address3 is', chain.getBalanceOfAddress('address3'));
+console.log('\nIs chain valid?', chain.isChainValid());
