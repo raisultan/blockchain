@@ -1,0 +1,13 @@
+- [ ] Balance model
+- [ ] Selection of transactions to mine
+- [ ] Transaction Fees to incentivize miners
+- [ ] PoW Enhancement - adjust difficulty dynamically based on the network's combined hash rate, ensuring consistent block times
+- [ ] Learn PoS
+- [ ] Network Synchronization - implement a protocol for nodes t sync their blockchains with the network, ensuring they are up-to-date and accurate
+- [ ] Address Generation - implement a secure way to generate addresses for users based on public key
+- [ ] Peer Discovery - method for nodes to discover and connect with peers, such as using a list of known noodes or a peer discovery protocol
+- [ ] Data Propagation - propagation of transactions and blocks across the network. This might include mechanisms for transaction/blocks verification before propagation and handling conflicts or forks
+- [ ] Double-Spending Protection
+- [ ] 51% Attack Protection
+- [ ] CLI/GUI for users
+- [ ] TestNet
