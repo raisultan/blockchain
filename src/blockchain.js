@@ -47,7 +47,7 @@ class Block {
             this.index
             + this.previousHash
             + this.timestamp
-            + JSON.stringify(this.data)
+            + JSON.stringify(this.transactions)
             + this.nonce,
         ).toString();
     }
